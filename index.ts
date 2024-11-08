@@ -19,6 +19,8 @@ const rl = readline.createInterface({
     output: process.stdout,
 });
 
+let lastCommandOutput = "";
+
 prompt();
 
 function prompt() {
@@ -28,35 +30,43 @@ function prompt() {
 }
 
 function runShellCommand(command: string) {
-    const [cmd, ...args] = command.split(" ");
+    const [cmd, ..._] = command.split(" ");
+
     if (cmd === "cd") {
         changeDirectory(command);
-    } else if (cmd === "history") {
-        const historyFile = path.join(os.homedir(), ".t_history");
-        try {
-            const data = fs.readFileSync(historyFile, "utf-8");
-            console.log(data);
-        } catch (err) {
-            console.error(`Error reading history file: ${err}`);
-        }
         prompt();
+    } else if (cmd === "history") {
+        saveToHistory(command);
+        prompt();
+    } else if (cmd === "cat") {
+        catFile(command);
+        prompt();
+    } else if (cmd === "exit") {
+        rl.close();
+    } else if (cmd === "copy") {
+        saveOutputToFile();
     } else {
-        try {
-            const process = spawn(cmd, args, { stdio: "inherit" });
-            process.on("close", (code) => {
-                if (code === 0) {
-                    saveToHistory(command);
-                } else {
-                    console.error(`Command exited with code ${code}`);
-                }
-                prompt();
-            });
-        } catch (err) {
-            console.error(`Error executing command: ${err}`);
-            prompt();
-        }
+        runTheCommand(command);
     }
 }
+
+// function runTheCommand(command: string) {
+//     const [cmd, ...args] = command.split(" ");
+//     try {
+//         const process = spawn(cmd, args, { stdio: "inherit" });
+//         process.on("close", (code) => {
+//             prompt();
+//             if (code === 0) {
+//                 saveToHistory(command);
+//             } else {
+//                 console.error(`Command exited with code ${code}`);
+//             }
+//         });
+//     } catch (err) {
+//         console.error(`Error executing command: ${err}`);
+//         prompt();
+//     }
+// }
 
 function changeDirectory(command: string) {
     const [_, ...args] = command.split(" ");
@@ -78,7 +88,33 @@ function changeDirectory(command: string) {
             console.error(`Error changing directory: ${err}`);
         }
     }
-    prompt();
+}
+
+function runTheCommand(command: string) {
+    const [cmd, ...args] = command.split(" ");
+    try {
+        const process = spawn(cmd, args, { stdio: "inherit" });
+        lastCommandOutput = "";
+
+        // process.stdout.on("data", (data) => {
+        //     lastCommandOutput += data.toString();
+        //     process.stdout.write(data);
+        // });
+
+        // process.stderr.on("data", (data) => {
+        //     lastCommandOutput += data.toString();
+        //     process.stderr.write(data);
+        // });
+
+        process.on("close", (code) => {
+            if (code === 0) saveToHistory(command);
+            else console.error(`Command exited with code ${code}`);
+            prompt();
+        });
+    } catch (err) {
+        console.error(`Error executing command: ${err}`);
+        prompt();
+    }
 }
 
 function saveToHistory(command: string) {
@@ -91,5 +127,28 @@ function saveToHistory(command: string) {
     const lastCommand = historyArray[historyArray.length - 2];
     if (lastCommand !== command) {
         fs.appendFileSync(historyFile, `${command}\n`);
+    }
+}
+
+function saveOutputToFile() {
+    const filePath = path.join(os.homedir(), "test");
+    try {
+        fs.writeFileSync(filePath, lastCommandOutput);
+        console.log(chalk.green(`Output saved to ${filePath}`));
+    } catch (err) {
+        console.error(`Error saving output to file: ${err}`);
+    }
+    prompt();
+}
+
+function catFile(command: string) {
+    const [_, ...args] = command.split(" ");
+    const file = args[0];
+    try {
+        const data = fs.readFileSync(file, "utf-8");
+        console.log(data);
+        saveToHistory(command);
+    } catch (err) {
+        console.error(`Error reading file: ${err}`);
     }
 }
