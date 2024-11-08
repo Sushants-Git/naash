@@ -8,6 +8,12 @@ import os from "os";
 import fs from "fs";
 import path from "path";
 
+interface CommandOutput {
+    command: string;
+    output: string;
+    timestamp?: string;
+}
+
 console.log(
     chalk.bold(`
     Welcome to your AI-Powered Terminal CLI! 🤖💻
@@ -19,7 +25,7 @@ const rl = readline.createInterface({
     output: process.stdout,
 });
 
-let lastCommandOutput = "";
+let lastCommandOutput = { command: "", output: "" };
 
 prompt();
 
@@ -36,7 +42,7 @@ function runShellCommand(command: string) {
         changeDirectory(command);
         prompt();
     } else if (cmd === "history") {
-        saveToHistory(command);
+        showHistory();
         prompt();
     } else if (cmd === "cat") {
         catFile(command);
@@ -45,6 +51,7 @@ function runShellCommand(command: string) {
         rl.close();
     } else if (cmd === "copy") {
         saveOutputToFile();
+        prompt();
     } else {
         runTheCommand(command);
     }
@@ -93,27 +100,35 @@ function changeDirectory(command: string) {
 function runTheCommand(command: string) {
     const [cmd, ...args] = command.split(" ");
     try {
-        const process = spawn(cmd, args, { stdio: "inherit" });
-        lastCommandOutput = "";
+        const process = spawn(cmd, args, { stdio: ["inherit", "inherit", "pipe"] });
+        lastCommandOutput = { command, output: "" };
 
-        // process.stdout.on("data", (data) => {
-        //     lastCommandOutput += data.toString();
-        //     process.stdout.write(data);
-        // });
-
-        // process.stderr.on("data", (data) => {
-        //     lastCommandOutput += data.toString();
-        //     process.stderr.write(data);
-        // });
+        process.stderr.on("data", (data) => {
+            lastCommandOutput.output += data.toString();
+        });
 
         process.on("close", (code) => {
             if (code === 0) saveToHistory(command);
-            else console.error(`Command exited with code ${code}`);
+            else {
+                console.error(lastCommandOutput.output);
+                saveOutputToFile();
+                // console.error(`Command exited with code ${code}`);
+            }
             prompt();
         });
     } catch (err) {
         console.error(`Error executing command: ${err}`);
         prompt();
+    }
+}
+
+function showHistory() {
+    const historyFile = path.join(os.homedir(), ".t_history");
+    try {
+        const history = fs.readFileSync(historyFile, "utf-8");
+        console.log(history);
+    } catch (err) {
+        console.error(`Error reading history: ${err}`);
     }
 }
 
@@ -131,14 +146,13 @@ function saveToHistory(command: string) {
 }
 
 function saveOutputToFile() {
-    const filePath = path.join(os.homedir(), "test");
+    const filePath = path.join(os.homedir(), ".t_error");
     try {
-        fs.writeFileSync(filePath, lastCommandOutput);
+        fs.writeFileSync(filePath, JSON.stringify(lastCommandOutput));
         console.log(chalk.green(`Output saved to ${filePath}`));
     } catch (err) {
         console.error(`Error saving output to file: ${err}`);
     }
-    prompt();
 }
 
 function catFile(command: string) {
