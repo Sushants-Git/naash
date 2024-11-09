@@ -42,17 +42,29 @@ function runShellCommand(command: string) {
         prompt();
     } else {
         try {
-            const process = spawn(cmd, args, { stdio: "inherit" });
+            // two inherits are for stdin and stdout and pipe for capturing errors
+            const process = spawn(cmd, args, { stdio: ["inherit", "inherit", "pipe"] });
+
+            let errorOutput = "";
+            process.stderr.on("data", (data) => {
+                errorOutput += data.toString();
+            });
+
+
             process.on("close", (code) => {
                 if (code === 0) {
                     saveToHistory(command);
                 } else {
-                    console.error(`Command exited with code ${code}`);
+                    const errorMsg = errorOutput || `Command exited with code ${code}`;
+                    console.error(errorMsg);
+                    // eg: git copy, spawn executes but git provides error, this suberror needs to be saved 
+                    saveToErrorHistory(command, errorMsg);
                 }
                 prompt();
             });
         } catch (err) {
             console.error(`Error executing command: ${err}`);
+            saveToErrorHistory(command, `${err}`);
             prompt();
         }
     }
@@ -93,3 +105,15 @@ function saveToHistory(command: string) {
         fs.appendFileSync(historyFile, `${command}\n`);
     }
 }
+
+function saveToErrorHistory(command: string, errorMsg: string) {
+    const errorHistoryFile = path.join(os.homedir(), ".t_error_history");
+
+    if (!fs.existsSync(errorHistoryFile)) {
+        fs.writeFileSync(errorHistoryFile, "");
+    }
+    const errorEntry = `Command: ${command}\n${errorMsg}\n\n`;
+    fs.appendFileSync(errorHistoryFile, errorEntry);
+}
+
+
