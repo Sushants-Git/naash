@@ -58,20 +58,20 @@ const originalRefreshLine = rl._refreshLine.bind(rl);
 
 let commandLog: CommandLog[] = loadCommandErrors();
 
-spawnSync("clear", [], {
-    stdio: ["inherit", "inherit", "pipe"],
-    env: { ...process.env },
-    cwd: process.cwd(),
-});
+function clearConsole() {
+    process.stdout.write('\x1Bc');
+}
+
+clearConsole();
 
 const terminalWidth = process.stdout.columns || 80;
 
-function centerText(text, width) {
+function centerText(text: string, width: number) {
     const padding = Math.max(0, Math.floor((width - text.length) / 2));
     return ' '.repeat(padding) + text;
 }
 
-function createBanner(text) {
+function createBanner(text: string) {
     const boxWidth = text.length + 6;
     const horizontalLine = '═'.repeat(boxWidth);
 
@@ -80,9 +80,9 @@ function createBanner(text) {
     console.log(centerText(`╚${horizontalLine}╝`, terminalWidth));
 }
 
-console.log('\n');  // Add some vertical spacing
+console.log('\n');
 createBanner('Welcome to your AI-Powered Terminal CLI! 🤖');
-console.log('\n');  // Add some vertical spacing
+console.log('\n');
 
 
 prompt();
@@ -369,27 +369,15 @@ function logInit(command: string) {
     return logEntry;
 }
 
-// function checkKey() {
-//     let pathToApi = os.homedir() + "/.t.env";
-//     let API = "";
-//     if (!fs.existsSync(pathToApi)) {
-//         console.log("⟨ ◠︰◠ ⟩ API key not found.");
-//         return false;
-//     }
-//     return true;
-// }
-
 async function checkKey(): Promise<boolean> {
     const pathToApi = path.join(os.homedir(), ".t.env");
 
-    // If the API key file already exists, return true
     if (fs.existsSync(pathToApi)) {
         return true;
     }
 
     console.log("⟨ ×︵× ⟩ API key not found.");
 
-    // Prompt the user for their API key
     const apiKey = await new Promise<string>((resolve) => {
         rl.question("⟨ ◠︰◠ ⟩ Please enter your API key: ", (answer) => {
             resolve(answer.trim());
@@ -401,7 +389,6 @@ async function checkKey(): Promise<boolean> {
         return false;
     }
 
-    // Try saving the API key to the file
     try {
         fs.writeFileSync(pathToApi, apiKey);
         console.log("⟨ ◠︶◠ ⟩ API key saved successfully!");
