@@ -245,12 +245,12 @@ function runTheCommand(command: string) {
         });
 
         pro.stderr.on("data", (data) => {
-            console.log(data.toString());
-            logEntry.output.stderr += data.toString();
+            console.error(data.toString());
+            logEntry.output.stderr += stripAnsi(data.toString());
         });
 
         pro.on("error", (error) => {
-            logEntry.output.error = error.message;
+            logEntry.output.error = stripAnsi(error.message);
             logEntry.output.exitCode = 1;
             console.error(chalk.red(error.message));
             commandLog.push(logEntry);
