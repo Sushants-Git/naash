@@ -13,12 +13,8 @@ function extractNpmPackageUrl(text) {
 }
 
 function extractBrewPackageUrl(text) {
-    const pattern = /https:\/\/(?:www\.)?brew\.sh\/formula\/[A-Za-z0-9_.-]+/g;
-    return text.match(pattern)?.at(0) || "";
-}
-
-function extractNpmPackageUrl(text) {
-    const pattern = /https:\/\/(?:www\.)?npmjs\.com\/package\/[@A-Za-z0-9_.-]+/g;
+    const pattern =
+        /https:\/\/(?:www\.)?formulae\.brew\.sh\/formula\/[A-Za-z0-9_.-]+/g;
     return text.match(pattern)?.at(0) || "";
 }
 
@@ -46,6 +42,7 @@ function isDownloadableUrl(url) {
         ".txt",
         ".json",
         ".xml",
+        ".deb"
     ];
     return fileExtensions.some((ext) => url.toLowerCase().endsWith(ext));
 }
