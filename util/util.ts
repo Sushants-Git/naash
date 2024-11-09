@@ -92,9 +92,13 @@ function catFile(command: string) {
 }
 
 function changeDirectory(command: string) {
-    const [_, ...args] = command.split(" ");
+    const parse = command.match(/(?:[^\s'"\\]+|"(?:\\"|[^"])*"|'(?:\\'|[^'])*')+/g)?.map(arg => 
+        arg.replace(/^['"]|['"]$/g, '')  
+    );
 
-    if (args.length === 0) {
+    const args = parse?.slice(1);
+
+    if (!args || args.length === 0) {
         const homeDir = os.homedir();
         try {
             process.chdir(homeDir);
