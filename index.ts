@@ -16,8 +16,12 @@ import { spawn } from "child_process";
 import os from "os";
 import fs from "fs";
 import path from "path";
+import { generateCommand } from "./prompt.ts";
+
+import CompactAISpinner from './spinner';
 
 import { type CommandLog } from "./types.ts";
+import clipboard from "clipboardy";
 
 const DIM = "\x1b[2m";
 const RESET = "\x1b[0m";
@@ -29,6 +33,21 @@ interface ReadLineWithHint extends readline.Interface {
 }
 
 let currentSuggestion: string = "";
+const historyFile = path.join(os.homedir(), ".t_history");
+
+let historicalCommands: string[] = [];
+let currentSessionCommands: string[] = [];
+
+try {
+    if (fs.existsSync(historyFile)) {
+        historicalCommands = fs
+            .readFileSync(historyFile, "utf-8")
+            .split("\n")
+            .filter(Boolean);
+    }
+} catch (err) {
+    console.error(`Error reading history: ${err}`);
+}
 
 const rl = readline.createInterface({
     input: process.stdin,
@@ -36,6 +55,16 @@ const rl = readline.createInterface({
 }) as ReadLineWithHint;
 
 const originalRefreshLine = rl._refreshLine.bind(rl);
+
+let commandLog: CommandLog[] = loadCommandErrors();
+
+console.log(
+    chalk.bold(`
+               Welcome to your AI-Powered Terminal CLI! 🤖💻
+               `),
+);
+
+prompt();
 
 rl._refreshLine = () => {
     if (currentSuggestion && rl.line) {
@@ -77,8 +106,6 @@ process.stdin.on("keypress", (char, key) => {
     }
 });
 
-let commandLog: CommandLog[] = loadCommandErrors();
-
 function generateId(): string {
     return `cmd_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
@@ -96,34 +123,10 @@ function loadCommandErrors(): CommandLog[] {
     return [];
 }
 
-console.log(
-    chalk.bold(`
-    Welcome to your AI-Powered Terminal CLI! 🤖💻
-    `),
-);
-
-prompt();
-
 function prompt() {
     rl.question(formatPrompt(), (command) => {
         runShellCommand(command);
     });
-}
-
-const historyFile = path.join(os.homedir(), ".t_history");
-
-let historicalCommands: string[] = [];
-let currentSessionCommands: string[] = [];
-
-try {
-    if (fs.existsSync(historyFile)) {
-        historicalCommands = fs
-            .readFileSync(historyFile, "utf-8")
-            .split("\n")
-            .filter(Boolean);
-    }
-} catch (err) {
-    console.error(`Error reading history: ${err}`);
 }
 
 function updateSuggestion(input: string) {
@@ -175,7 +178,7 @@ function updateSuggestion(input: string) {
     rl._refreshLine();
 }
 
-function runShellCommand(command: string) {
+async function runShellCommand(command: string) {
     const [cmd, ..._] = command.split(" ");
 
     if (cmd === "cd") {
@@ -198,9 +201,35 @@ function runShellCommand(command: string) {
     } else if (cmd === "copy") {
         saveOutputToFile(commandLog);
         prompt();
+    } else if (cmd === "hm") {
+        const spinner = new CompactAISpinner();
+
+        const customSpinner = new CompactAISpinner({
+            interval: 80,
+            color: true,
+            stream: process.stdout
+        });
+
+        spinner.start('Processing data...');
+
+        let res = await askGemini();
+
+        spinner.stop();
+
+        console.log(res);
+
+        if (res) {
+            clipboard.writeSync(res);
+        }
+
+        prompt();
     } else {
         runTheCommand(command);
     }
+}
+
+async function askGemini() {
+    return await generateCommand();
 }
 
 function runTheCommand(command: string) {
