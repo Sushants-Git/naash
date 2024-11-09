@@ -73,6 +73,9 @@ function saveOutputToFile(commandHistory: CommandLog[]) {
         } catch (err) {
             console.error(`Error saving output to file: ${err}`);
         }
+    } else {
+        fs.writeFileSync(filePath, JSON.stringify(commandHistory, null, 2));
+        console.log(chalk.green(`Output saved to ${filePath}`));
     }
 }
 

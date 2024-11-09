@@ -19,6 +19,6 @@
     "yargs": "^17.7.2"
   },
   "bin": {
-    "t": "bunx index.ts"
+    "t": "./index.ts"
   }
 }

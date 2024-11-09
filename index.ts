@@ -12,7 +12,7 @@ import {
 import stripAnsi from "strip-ansi";
 
 import readline from "readline";
-import { spawn } from "child_process";
+import { spawn, spawnSync } from "child_process";
 import os from "os";
 import fs from "fs";
 import path from "path";
@@ -58,11 +58,32 @@ const originalRefreshLine = rl._refreshLine.bind(rl);
 
 let commandLog: CommandLog[] = loadCommandErrors();
 
-console.log(
-    chalk.bold(`
-               Welcome to your AI-Powered Terminal CLI! 🤖💻
-               `),
-);
+spawnSync("clear", [], {
+    stdio: ["inherit", "inherit", "pipe"],
+    env: { ...process.env },
+    cwd: process.cwd(),
+});
+
+const terminalWidth = process.stdout.columns || 80;
+
+function centerText(text, width) {
+    const padding = Math.max(0, Math.floor((width - text.length) / 2));
+    return ' '.repeat(padding) + text;
+}
+
+function createBanner(text) {
+    const boxWidth = text.length + 6;
+    const horizontalLine = '═'.repeat(boxWidth);
+
+    console.log(centerText(`╔${horizontalLine}╗`, terminalWidth));
+    console.log(centerText(`║   ${text}   ║`, terminalWidth));
+    console.log(centerText(`╚${horizontalLine}╝`, terminalWidth));
+}
+
+console.log('\n');  // Add some vertical spacing
+createBanner('Welcome to your AI-Powered Terminal CLI! 🤖');
+console.log('\n');  // Add some vertical spacing
+
 
 prompt();
 
