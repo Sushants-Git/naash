@@ -11,101 +11,106 @@ const errorFile = path.join(os.homedir(), ".t_error");
 let pathToApi = os.homedir() + "/.t.env";
 let API_KEY = "";
 if (fs.existsSync(pathToApi)) {
-    API_KEY = fs.readFileSync(pathToApi, "utf-8");
+  API_KEY = fs.readFileSync(pathToApi, "utf-8");
 }
 let genAI = new GoogleGenerativeAI(API_KEY as string);
 
 let model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 const instructionForHm: string = `
-- **Note:** If you're unsure about the answer, or don't want to reply for any reason, simply provide the UUID: 3d8a19a704\n
-- Be smart enough to understand what the user means. \n
-- Analyze the command run by the user and error message.Provide only the correct command. Do not include any explanations or additional formatting - just the unformatted correct command.
+- **Note:** If you're unsure of the correct response, or prefer not to answer for any reason, reply only with the UUID: 3d8a19a704.
+- As an intelligent assistant, interpret the user's intent accurately. Provide precise shell commands in response, based on your analysis of the user's input and any errors they encountered.
+- Your goal is to assist the user by giving them only the correct command they need to execute, formatted without explanations or additional details. Assume the user has a minimal shell environment installed and respond with the exact command they should run.
+- Be concise and efficient, responding with only the command.
+- platform ${process.platform}
 `;
 
 const instructionForHp: string = `
-- **Note:** If you're unsure about the answer, or don't want to reply for any reason, simply provide the UUID: 3d8a19a704 \n
-- Be smart enough to understand what the user means. \n
-- Analyze the message typed by the user and provide only the correct command that can be run on a shell, assume that the user has the bare minimum installed. Do not include any explanations or additional formatting - just the unformatted correct command.`;
+- **Note:** If you're unsure of the correct response, or prefer not to answer for any reason, reply only with the UUID: 3d8a19a704.
+- You are a command-line assistant, helping users run commands in a shell environment. Analyze the user's input and determine the exact shell command they need to execute, assuming they have a basic installation.
+- Respond solely with the unformatted command line instruction, omitting any explanations or extraneous text.
+- Focus on providing precise commands, interpreting user input efficiently and accurately to meet their needs.
+- platform ${process.platform}
+`;
 
 export async function generateCommandForHm() {
-    try {
-        if (fs.existsSync(errorFile)) {
-            const data = fs.readFileSync(errorFile, "utf-8");
-            if (data.trim() === "") {
-                console.error("File is empty.");
-            }
-            errorPrompt = JSON.parse(data);
-        }
-    } catch (error) {
-        console.error("Error reading file:", error);
+  try {
+    if (fs.existsSync(errorFile)) {
+      const data = fs.readFileSync(errorFile, "utf-8");
+      if (data.trim() === "") {
+        console.error("File is empty.");
+      }
+      errorPrompt = JSON.parse(data);
+    }
+  } catch (error) {
+    console.error("Error reading file:", error);
+  }
+
+  if (!API_KEY) {
+    let pathToApi = os.homedir() + "/.t.env";
+    let API_KEY = "";
+    if (fs.existsSync(pathToApi)) {
+      API_KEY = fs.readFileSync(pathToApi, "utf-8");
     }
 
-    if (!API_KEY) {
-        let pathToApi = os.homedir() + "/.t.env";
-        let API_KEY = "";
-        if (fs.existsSync(pathToApi)) {
-            API_KEY = fs.readFileSync(pathToApi, "utf-8");
-        }
+    genAI = new GoogleGenerativeAI(API_KEY as string);
 
-        genAI = new GoogleGenerativeAI(API_KEY as string);
+    model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  }
 
-        model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  try {
+    const combinedPrompt: string = `${instructionForHm}\n${JSON.stringify(errorPrompt.at(-1))}`;
+    const result = await model.generateContent(combinedPrompt);
+    const responseText: string | undefined = result.response?.text();
+
+    const command: string = responseText?.split("\n")[0].trim() || "";
+    if (command && command !== "3d8a19a704") {
+      return command;
+    } else {
+      return "3d8a19a704";
     }
-
-    try {
-        const combinedPrompt: string = `${instructionForHm}\n${JSON.stringify(errorPrompt.at(-1))}`;
-        const result = await model.generateContent(combinedPrompt);
-        const responseText: string | undefined = result.response?.text();
-
-        const command: string = responseText?.split("\n")[0].trim() || "";
-        if (command && command !== "3d8a19a704") {
-            return command;
-        } else {
-            return "3d8a19a704";
-        }
-    } catch (error) {
-        console.error("Error generating command:", error);
-    }
+  } catch (error) {
+    console.error("Error generating command:", error);
+  }
 }
 
 export async function generateCommandForHp(message: string) {
-    try {
-        if (fs.existsSync(errorFile)) {
-            const data = fs.readFileSync(errorFile, "utf-8");
-            if (data.trim() === "") {
-                console.error("File is empty.");
-            }
-            errorPrompt = JSON.parse(data);
-        }
-    } catch (error) {
-        console.error("Error reading file:", error);
+  try {
+    if (fs.existsSync(errorFile)) {
+      const data = fs.readFileSync(errorFile, "utf-8");
+      if (data.trim() === "") {
+        console.error("File is empty.");
+      }
+      errorPrompt = JSON.parse(data);
+    }
+  } catch (error) {
+    console.error("Error reading file:", error);
+  }
+
+  if (!API_KEY) {
+    let pathToApi = os.homedir() + "/.t.env";
+    let API_KEY = "";
+    if (fs.existsSync(pathToApi)) {
+      API_KEY = fs.readFileSync(pathToApi, "utf-8");
     }
 
-    if (!API_KEY) {
-        let pathToApi = os.homedir() + "/.t.env";
-        let API_KEY = "";
-        if (fs.existsSync(pathToApi)) {
-            API_KEY = fs.readFileSync(pathToApi, "utf-8");
-        }
+    genAI = new GoogleGenerativeAI(API_KEY as string);
 
-        genAI = new GoogleGenerativeAI(API_KEY as string);
+    model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  }
 
-        model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  try {
+    const combinedPrompt: string = `${instructionForHp}\n${message}`;
+    const result = await model.generateContent(combinedPrompt);
+    const responseText: string | undefined = result.response?.text();
+
+    const command: string = responseText?.split("\n")[0].trim() || "";
+    if (command && command !== "3d8a19a704") {
+      return command;
+    } else {
+      return "3d8a19a704";
     }
-
-    try {
-        const combinedPrompt: string = `${instructionForHp}\n${message}`;
-        const result = await model.generateContent(combinedPrompt);
-        const responseText: string | undefined = result.response?.text();
-
-        const command: string = responseText?.split("\n")[0].trim() || "";
-        if (command && command !== "3d8a19a704") {
-            return command;
-        } else {
-            return "3d8a19a704";
-        }
-    } catch (error) {
-        console.error("Error generating command:", error);
-    }
+  } catch (error) {
+    console.error("Error generating command:", error);
+  }
 }

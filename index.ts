@@ -12,7 +12,7 @@ import {
 import stripAnsi from "strip-ansi";
 
 import readline from "readline";
-import { spawn, spawnSync } from "child_process";
+import { spawn } from "cross-spawn";
 import os from "os";
 import fs from "fs";
 import path from "path";
@@ -59,7 +59,7 @@ const originalRefreshLine = rl._refreshLine.bind(rl);
 let commandLog: CommandLog[] = loadCommandErrors();
 
 function clearConsole() {
-    process.stdout.write('\x1Bc');
+    process.stdout.write("\x1Bc");
 }
 
 clearConsole();
@@ -68,22 +68,21 @@ const terminalWidth = process.stdout.columns || 80;
 
 function centerText(text: string, width: number) {
     const padding = Math.max(0, Math.floor((width - text.length) / 2));
-    return ' '.repeat(padding) + text;
+    return " ".repeat(padding) + text;
 }
 
 function createBanner(text: string) {
     const boxWidth = text.length + 6;
-    const horizontalLine = '═'.repeat(boxWidth);
+    const horizontalLine = "═".repeat(boxWidth);
 
     console.log(centerText(`╔${horizontalLine}╗`, terminalWidth));
     console.log(centerText(`║   ${text}   ║`, terminalWidth));
     console.log(centerText(`╚${horizontalLine}╝`, terminalWidth));
 }
 
-console.log('\n');
-createBanner('Welcome to your AI-Powered Terminal CLI! 🤖');
-console.log('\n');
-
+console.log("\n");
+createBanner("Welcome to your AI-Powered Terminal CLI! 🤖");
+console.log("\n");
 
 prompt();
 
