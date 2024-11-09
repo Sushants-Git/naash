@@ -302,6 +302,7 @@ function runTheCommand(command: string) {
     try {
         const pro = spawn(cmd, args, {
             stdio: ["inherit", "inherit", "pipe"],
+            shell: true,
             env: { ...process.env },
             cwd: logEntry.command.cwd,
         });
