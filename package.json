@@ -21,6 +21,6 @@
     "yargs": "^17.7.2"
   },
   "bin": {
-    "yash": "./index.ts"
+    "naash": "./index.ts"
   }
 }

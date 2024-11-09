@@ -19,3 +19,10 @@ export interface CommandLog {
     };
 }
 
+export interface Config {
+    gemini_apiKey: string;
+    azure_endpoint: string;
+    azure_apiKey: string;
+    azure_deploymentName: string;
+}
+
