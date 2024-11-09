@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 
-import type { CommandLog } from "./types";
+import type { CommandLog, Config } from "./types";
 
 let errorPrompt: CommandLog[];
 const errorFile = path.join(os.homedir(), ".t_error");
@@ -11,7 +11,8 @@ const errorFile = path.join(os.homedir(), ".t_error");
 let pathToApi = os.homedir() + "/.t.env";
 let API_KEY = "";
 if (fs.existsSync(pathToApi)) {
-    API_KEY = fs.readFileSync(pathToApi, "utf-8");
+    API_KEY = (JSON.parse(fs.readFileSync(pathToApi, "utf-8")) as Config)
+        .gemini_apiKey;
 }
 let genAI = new GoogleGenerativeAI(API_KEY as string);
 
@@ -54,7 +55,8 @@ export async function generateCommandForHm() {
         let pathToApi = os.homedir() + "/.t.env";
         let API_KEY = "";
         if (fs.existsSync(pathToApi)) {
-            API_KEY = fs.readFileSync(pathToApi, "utf-8");
+            API_KEY = (JSON.parse(fs.readFileSync(pathToApi, "utf-8")) as Config)
+                .gemini_apiKey;
         }
 
         genAI = new GoogleGenerativeAI(API_KEY as string);
@@ -78,30 +80,18 @@ export async function generateCommandForHm() {
         } else {
             return "3d8a19a704";
         }
-
     } catch (error) {
         return "3d8a19a704";
     }
 }
 
 export async function generateCommandForHp(message: string) {
-    try {
-        if (fs.existsSync(errorFile)) {
-            const data = fs.readFileSync(errorFile, "utf-8");
-            if (data.trim() === "") {
-                console.error("File is empty.");
-            }
-            errorPrompt = JSON.parse(data);
-        }
-    } catch (error) {
-        console.error("Error reading file:", error);
-    }
-
     if (!API_KEY) {
         let pathToApi = os.homedir() + "/.t.env";
         let API_KEY = "";
         if (fs.existsSync(pathToApi)) {
-            API_KEY = fs.readFileSync(pathToApi, "utf-8");
+            API_KEY = (JSON.parse(fs.readFileSync(pathToApi, "utf-8")) as Config)
+                .gemini_apiKey;
         }
 
         genAI = new GoogleGenerativeAI(API_KEY as string);
@@ -126,7 +116,42 @@ export async function generateCommandForHp(message: string) {
         } else {
             return "3d8a19a704";
         }
+    } catch (error) {
+        return "3d8a19a704";
+    }
+}
 
+export async function betterMan(message: string) {
+    if (!API_KEY) {
+        let pathToApi = os.homedir() + "/.t.env";
+        let API_KEY = "";
+        if (fs.existsSync(pathToApi)) {
+            API_KEY = (JSON.parse(fs.readFileSync(pathToApi, "utf-8")) as Config)
+                .gemini_apiKey;
+        }
+
+        genAI = new GoogleGenerativeAI(API_KEY as string);
+
+        model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    }
+
+    try {
+        const combinedPrompt: string = `You are a smart command-line assistant, the question the user has asked is -> \n${message}\n explain it to the user properly, if you cannot explain something just respond with 3d8a19a704 and nothing else, the output will be passed to a terminal so keep it clean`;
+        const result = await model.generateContent(combinedPrompt);
+
+        const responseText: string | undefined = result.response.text();
+
+        if (!responseText) {
+            return "3d8a19a704";
+        }
+
+        const command: string = responseText?.split("\n")[0].trim() || "";
+
+        if (command && command !== "3d8a19a704") {
+            return command;
+        } else {
+            return "3d8a19a704";
+        }
     } catch (error) {
         return "3d8a19a704";
     }
