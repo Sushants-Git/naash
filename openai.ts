@@ -1,19 +1,14 @@
 import fs from "fs";
 import path from "path";
 import os from "os";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 
 import type { CommandLog } from "./types";
 
-// Add this to your existing types.ts or create if doesn't exist
-export type AIProvider = 'gemini' | 'azure';
-
-interface Config {
+interface AzureConfig {
     gemini_apiKey: string;
     azure_endpoint: string;
     azure_apiKey: string;
     azure_deploymentName: string;
-    current_provider?: AIProvider;  // Add this to track current provider
 }
 
 interface OpenAIResponse {
@@ -26,18 +21,15 @@ interface OpenAIResponse {
 
 let errorPrompt: CommandLog[];
 const errorFile = path.join(os.homedir(), ".t_error");
-let currentProvider: AIProvider = 'gemini'; // Default to gemini
 
-// Read configuration
-let config: Config;
+// Read Azure configuration
+let config: AzureConfig;
 const configPath = path.join(os.homedir(), ".t.env");
 
 try {
     if (fs.existsSync(configPath)) {
         const configData = fs.readFileSync(configPath, "utf-8");
         config = JSON.parse(configData);
-        // Set initial provider from config if available
-        currentProvider = config.current_provider || 'gemini';
     } else {
         throw new Error("Configuration file not found");
     }
@@ -61,20 +53,6 @@ const instructionForHp: string = `
 - Focus on providing precise commands, interpreting user input efficiently and accurately to meet their needs.
 - platform ${process.platform}
 `;
-
-async function callGemini(prompt: string): Promise<string> {
-    try {
-        let genAI = new GoogleGenerativeAI(config.gemini_apiKey);
-        let model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
-
-        const result = await model.generateContent(prompt);
-        const responseText = result.response?.text();
-        return responseText?.split("\n")[0].trim() || "3d8a19a704";
-    } catch (error) {
-        console.error('Error calling Gemini:', error);
-        return "3d8a19a704";
-    }
-}
 
 async function callAzureOpenAI(prompt: string): Promise<string> {
     try {
@@ -106,12 +84,6 @@ async function callAzureOpenAI(prompt: string): Promise<string> {
     }
 }
 
-async function callAI(prompt: string): Promise<string> {
-    return currentProvider === 'azure' ?
-        await callAzureOpenAI(prompt) :
-        await callGemini(prompt);
-}
-
 export async function generateCommandForHm(): Promise<string> {
     try {
         if (fs.existsSync(errorFile)) {
@@ -124,7 +96,10 @@ export async function generateCommandForHm(): Promise<string> {
         }
 
         const combinedPrompt: string = `${instructionForHm}\n${JSON.stringify(errorPrompt.at(-1))}`;
-        return await callAI(combinedPrompt);
+        const response = await callAzureOpenAI(combinedPrompt);
+
+        const command: string = response.split("\n")[0].trim();
+        return command && command !== "3d8a19a704" ? command : "3d8a19a704";
     } catch (error) {
         console.error("Error generating command:", error);
         return "3d8a19a704";
@@ -133,19 +108,23 @@ export async function generateCommandForHm(): Promise<string> {
 
 export async function generateCommandForHp(message: string): Promise<string> {
     try {
+        if (fs.existsSync(errorFile)) {
+            const data = fs.readFileSync(errorFile, "utf-8");
+            if (data.trim() === "") {
+                console.error("File is empty.");
+                return "3d8a19a704";
+            }
+            errorPrompt = JSON.parse(data);
+        }
+
         const combinedPrompt: string = `${instructionForHp}\n${message}`;
-        return await callAI(combinedPrompt);
+        const response = await callAzureOpenAI(combinedPrompt);
+
+        const command: string = response.split("\n")[0].trim();
+        return command && command !== "3d8a19a704" ? command : "3d8a19a704";
     } catch (error) {
         console.error("Error generating command:", error);
         return "3d8a19a704";
     }
 }
 
-// Export the current provider and a function to change it
-export const getCurrentProvider = (): AIProvider => currentProvider;
-export const setProvider = (provider: AIProvider): void => {
-    currentProvider = provider;
-    // Optionally save to config file
-    config.current_provider = provider;
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-};

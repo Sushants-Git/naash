@@ -23,6 +23,7 @@ import CompactAISpinner from "./spinner";
 import { type CommandLog } from "./types.ts";
 import clipboard from "clipboardy";
 
+
 const DIM = "\x1b[2m";
 const RESET = "\x1b[0m";
 
