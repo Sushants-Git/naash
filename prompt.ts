@@ -67,14 +67,20 @@ export async function generateCommandForHm() {
         const result = await model.generateContent(combinedPrompt);
         const responseText: string | undefined = result.response?.text();
 
+        if (!responseText) {
+            return "3d8a19a704";
+        }
+
         const command: string = responseText?.split("\n")[0].trim() || "";
+
         if (command && command !== "3d8a19a704") {
             return command;
         } else {
             return "3d8a19a704";
         }
+
     } catch (error) {
-        console.error("Error generating command:", error);
+        return "3d8a19a704";
     }
 }
 
@@ -106,15 +112,22 @@ export async function generateCommandForHp(message: string) {
     try {
         const combinedPrompt: string = `${instructionForHp}\n${message}`;
         const result = await model.generateContent(combinedPrompt);
-        const responseText: string | undefined = result.response?.text();
+
+        const responseText: string | undefined = result.response.text();
+
+        if (!responseText) {
+            return "3d8a19a704";
+        }
 
         const command: string = responseText?.split("\n")[0].trim() || "";
+
         if (command && command !== "3d8a19a704") {
             return command;
         } else {
             return "3d8a19a704";
         }
+
     } catch (error) {
-        // console.error("Error generating command:", error);
+        return "3d8a19a704";
     }
 }
