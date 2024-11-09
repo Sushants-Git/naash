@@ -16,9 +16,9 @@ import { spawn } from "child_process";
 import os from "os";
 import fs from "fs";
 import path from "path";
-import { generateCommand } from "./prompt.ts";
+import { generateCommandForHm, generateCommandForHp } from "./prompt.ts";
 
-import CompactAISpinner from './spinner';
+import CompactAISpinner from "./spinner";
 
 import { type CommandLog } from "./types.ts";
 import clipboard from "clipboardy";
@@ -90,6 +90,8 @@ rl._refreshLine = () => {
     }
 };
 
+let suggestionAccepted = false;
+
 process.stdin.on("keypress", (char, key) => {
     if (!key) return;
 
@@ -97,12 +99,22 @@ process.stdin.on("keypress", (char, key) => {
         rl.line = currentSuggestion;
         rl.cursor = rl.line.length;
         currentSuggestion = "";
+        suggestionAccepted = true;
         rl._refreshLine();
     } else if (key.name === "escape") {
         currentSuggestion = "";
         rl._refreshLine();
+    } else if (key.name === "left" || key.name === "right" || key.name === "backspace" || key.name === "delete") {
+        if (suggestionAccepted) {
+            currentSuggestion = "";
+            suggestionAccepted = false;
+            rl._refreshLine();
+        }
     } else if (key.name !== "return") {
-        process.nextTick(() => updateSuggestion(rl.line));
+        process.nextTick(() => {
+            updateSuggestion(rl.line);
+            suggestionAccepted = false;
+        });
     }
 });
 
@@ -179,7 +191,7 @@ function updateSuggestion(input: string) {
 }
 
 async function runShellCommand(command: string) {
-    const [cmd, ..._] = command.split(" ");
+    const [cmd, ...args] = command.split(" ");
 
     if (cmd === "cd") {
         currentSessionCommands.push(command);
@@ -207,12 +219,41 @@ async function runShellCommand(command: string) {
         const customSpinner = new CompactAISpinner({
             interval: 80,
             color: true,
-            stream: process.stdout
+            stream: process.stdout,
         });
 
-        spinner.start('Processing data...');
+        spinner.start("Processing data...");
 
-        let res = await askGemini();
+        let res = await askGemini("hm");
+
+        spinner.stop();
+
+        console.log(res);
+
+        if (res) {
+            clipboard.writeSync(res);
+        }
+
+        prompt();
+    } else if (cmd === "hp") {
+        if (args.length === 0) {
+            console.log("Hey you did not enter a message.")
+            prompt();
+        }
+
+        let message = args.join(" ");
+
+        const spinner = new CompactAISpinner();
+
+        const customSpinner = new CompactAISpinner({
+            interval: 80,
+            color: true,
+            stream: process.stdout,
+        });
+
+        spinner.start("Processing data...");
+
+        let res = await askGemini("hp", message);
 
         spinner.stop();
 
@@ -228,8 +269,12 @@ async function runShellCommand(command: string) {
     }
 }
 
-async function askGemini() {
-    return await generateCommand();
+async function askGemini(to: "hm" | "hp", message?: string) {
+    if (to === "hm") {
+        return await generateCommandForHm();
+    } else if (to === "hp" && message) {
+        return await generateCommandForHp(message);
+    }
 }
 
 function runTheCommand(command: string) {

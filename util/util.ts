@@ -1,6 +1,6 @@
 import chalk from "chalk";
 import os from "os";
-import fs from "fs";
+import fs, { existsSync } from "fs";
 import path from "path";
 import type { CommandLog } from "../types";
 
@@ -63,12 +63,16 @@ function saveToHistory(command: string) {
 
 function saveOutputToFile(commandHistory: CommandLog[]) {
     const filePath = path.join(os.homedir(), ".t_error");
-    try {
-        const trimmedHistory = commandHistory.slice(-1000);
-        fs.writeFileSync(filePath, JSON.stringify(trimmedHistory, null, 2));
-        console.log(chalk.green(`Output saved to ${filePath}`));
-    } catch (err) {
-        console.error(`Error saving output to file: ${err}`);
+
+    if (existsSync(filePath)) {
+        try {
+            commandHistory = commandHistory.slice(-10);
+
+            fs.writeFileSync(filePath, JSON.stringify(commandHistory, null, 2));
+            console.log(chalk.green(`Output saved to ${filePath}`));
+        } catch (err) {
+            console.error(`Error saving output to file: ${err}`);
+        }
     }
 }
 
