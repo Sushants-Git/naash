@@ -131,7 +131,7 @@ const aiErrorMessages = [
     "【 ⊛﹏⊛ 】",
 ];
 
-function getRandomErrorMessage(): string {
+function getErrorMessageFace(): string {
     return aiErrorMessages[Math.floor(Math.random() * aiErrorMessages.length)];
 }
 
@@ -142,4 +142,5 @@ export {
     showHistory,
     saveToHistory,
     changeDirectory,
+    getErrorMessageFace
 };

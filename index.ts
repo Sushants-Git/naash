@@ -8,6 +8,7 @@ import {
     showHistory,
     saveToHistory,
     changeDirectory,
+    getErrorMessageFace,
 } from "./util/util.ts";
 import stripAnsi from "strip-ansi";
 
@@ -268,10 +269,16 @@ async function runShellCommand(command: string) {
 
             spinner.stop();
 
-            console.log(res);
+            if (res === "3d8a19a704") {
+                console.log(
+                    `${getErrorMessageFace()} Unable to process you request at the moment.`,
+                );
+            } else {
+                console.log(res);
 
-            if (res) {
-                clipboard.writeSync(res);
+                if (res) {
+                    clipboard.writeSync(res);
+                }
             }
         }
 
@@ -293,10 +300,16 @@ async function runShellCommand(command: string) {
 
             spinner.stop();
 
-            console.log(res);
+            if (res === "3d8a19a704") {
+                console.log(
+                    `${getErrorMessageFace()} Unable to process you request at the moment.`,
+                );
+            } else {
+                console.log(res);
 
-            if (res) {
-                clipboard.writeSync(res);
+                if (res) {
+                    clipboard.writeSync(res);
+                }
             }
         }
 
@@ -322,7 +335,7 @@ function runTheCommand(command: string) {
     try {
         const pro = spawn(cmd, args, {
             stdio: ["inherit", "inherit", "pipe"],
-            shell: true,
+            shell: true, 
             env: { ...process.env },
             cwd: logEntry.command.cwd,
         });
