@@ -104,7 +104,12 @@ process.stdin.on("keypress", (char, key) => {
     } else if (key.name === "escape") {
         currentSuggestion = "";
         rl._refreshLine();
-    } else if (key.name === "left" || key.name === "right" || key.name === "backspace" || key.name === "delete") {
+    } else if (
+        key.name === "left" ||
+        key.name === "right" ||
+        key.name === "backspace" ||
+        key.name === "delete"
+    ) {
         if (suggestionAccepted) {
             currentSuggestion = "";
             suggestionAccepted = false;
@@ -214,53 +219,45 @@ async function runShellCommand(command: string) {
         saveOutputToFile(commandLog);
         prompt();
     } else if (cmd === "hm") {
-        const spinner = new CompactAISpinner();
+        if (await checkKey()) {
+            const spinner = new CompactAISpinner();
 
-        const customSpinner = new CompactAISpinner({
-            interval: 80,
-            color: true,
-            stream: process.stdout,
-        });
+            spinner.start("Processing data...");
 
-        spinner.start("Processing data...");
+            let res = await askGemini("hm");
 
-        let res = await askGemini("hm");
+            spinner.stop();
 
-        spinner.stop();
+            console.log(res);
 
-        console.log(res);
-
-        if (res) {
-            clipboard.writeSync(res);
+            if (res) {
+                clipboard.writeSync(res);
+            }
         }
 
         prompt();
     } else if (cmd === "hp") {
-        if (args.length === 0) {
-            console.log("Hey you did not enter a message.")
-            prompt();
-        }
+        if (await checkKey()) {
+            if (args.length === 0) {
+                console.log("Hey you did not enter a message.");
+                prompt();
+            }
 
-        let message = args.join(" ");
+            let message = args.join(" ");
 
-        const spinner = new CompactAISpinner();
+            const spinner = new CompactAISpinner();
 
-        const customSpinner = new CompactAISpinner({
-            interval: 80,
-            color: true,
-            stream: process.stdout,
-        });
+            spinner.start("Processing data...");
 
-        spinner.start("Processing data...");
+            let res = await askGemini("hp", message);
 
-        let res = await askGemini("hp", message);
+            spinner.stop();
 
-        spinner.stop();
+            console.log(res);
 
-        console.log(res);
-
-        if (res) {
-            clipboard.writeSync(res);
+            if (res) {
+                clipboard.writeSync(res);
+            }
         }
 
         prompt();
@@ -349,4 +346,47 @@ function logInit(command: string) {
     };
 
     return logEntry;
+}
+
+// function checkKey() {
+//     let pathToApi = os.homedir() + "/.t.env";
+//     let API = "";
+//     if (!fs.existsSync(pathToApi)) {
+//         console.log("⟨ ◠︰◠ ⟩ API key not found.");
+//         return false;
+//     }
+//     return true;
+// }
+
+async function checkKey(): Promise<boolean> {
+    const pathToApi = path.join(os.homedir(), ".t.env");
+
+    // If the API key file already exists, return true
+    if (fs.existsSync(pathToApi)) {
+        return true;
+    }
+
+    console.log("⟨ ×︵× ⟩ API key not found.");
+
+    // Prompt the user for their API key
+    const apiKey = await new Promise<string>((resolve) => {
+        rl.question("⟨ ◠︰◠ ⟩ Please enter your API key: ", (answer) => {
+            resolve(answer.trim());
+        });
+    });
+
+    if (!apiKey) {
+        console.log("⟨ ×︵× ⟩ API key cannot be empty");
+        return false;
+    }
+
+    // Try saving the API key to the file
+    try {
+        fs.writeFileSync(pathToApi, apiKey);
+        console.log("⟨ ◠︶◠ ⟩ API key saved successfully!");
+        return true;
+    } catch (err) {
+        console.error("⟨ ⊗︵⊗ ⟩ Error saving API key:", err);
+        return false;
+    }
 }

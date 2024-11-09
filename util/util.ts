@@ -110,6 +110,28 @@ function changeDirectory(command: string) {
     }
 }
 
+const aiErrorMessages = [
+    "⟨ ×︵× ⟩",
+    "⟨ ⊖︵⊖ ⟩",
+    "⟨ ⊗︵⊗ ⟩",
+    "【 ◑︵◐ 】",
+    "⦗ ⊘︵⊘ ⦘",
+    "[⊗ _ ⊗]",
+    "⦅ •︵• ⦆",
+    "⟦ ⊖﹏⊖ ⟧",
+    "⟨ ⊝︵⊝ ⟩",
+    "【 ⊛︵⊛ 】",
+    "⦗ ⊕︵⊕ ⦘",
+    "⟦ ⊗﹏⊗ ⟧",
+    "⦅ ◉︵◉ ⦆",
+    "⟨ ⊜﹏⊜ ⟩",
+    "【 ⊛﹏⊛ 】",
+];
+
+function getRandomErrorMessage(): string {
+    return aiErrorMessages[Math.floor(Math.random() * aiErrorMessages.length)];
+}
+
 export {
     formatPrompt,
     catFile,
