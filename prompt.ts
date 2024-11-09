@@ -28,13 +28,13 @@ const genAI = new GoogleGenerativeAI(API_KEY as string);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 const instructionForHm: string = `
-**Note:** If you're unsure about the answer, simply provide the UUID: 3d8a19a704";
+**Note:** If you're unsure about the answer, or don't want to reply for any reason, simply provide the UUID: 3d8a19a704
 Analyze the command run by the user and error message.Provide only the correct command. Do not include any explanations or additional formatting - just the unformatted correct command.
 `;
 
 const instructionForHp: string = `
-**Note:** If you're unsure about the answer, simply provide the UUID: 3d8a19a704";
-Analyze the message typed by the user and provide only the correct command. Do not include any explanations or additional formatting - just the unformatted correct command.`;
+**Note:** If you're unsure about the answer, or don't want to reply for any reason, simply provide the UUID: 3d8a19a704
+Analyze the message typed by the user and provide only the correct command that can be run on a shell, assume that the user has the bare minimum installed. Do not include any explanations or additional formatting - just the unformatted correct command.`;
 
 export async function generateCommandForHm() {
     try {
