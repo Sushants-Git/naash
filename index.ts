@@ -22,6 +22,7 @@ import CompactAISpinner from "./spinner";
 
 import { type CommandLog } from "./types.ts";
 import clipboard from "clipboardy";
+import { Worker } from "worker_threads";
 
 const DIM = "\x1b[2m";
 const RESET = "\x1b[0m";
@@ -76,18 +77,20 @@ function createBanner(text: string) {
     const horizontalLine = "═".repeat(boxWidth);
 
     console.log(centerText(`╔${horizontalLine}╗`, terminalWidth));
-    console.log(centerText(`║   ${text}   ║`, terminalWidth));
+    console.log(centerText(`║  💻  ${text}  💡  ║`, terminalWidth));
     console.log(centerText(`╚${horizontalLine}╝`, terminalWidth));
 }
 
 console.log("\n");
-createBanner("Welcome to your AI-Powered Terminal CLI! 🤖");
+createBanner("Welcome to YAASH (Yet Another AI Shell) 🚀✨");
 console.log("\n");
 
 prompt();
 
+let bypassRlLine = false;
+
 rl._refreshLine = () => {
-    if (currentSuggestion && rl.line) {
+    if (currentSuggestion && (rl.line || bypassRlLine)) {
         const promptLength = stripAnsi(formatPrompt()).length;
         const currentLine = rl.line;
         const currentCursor = rl.cursor;
@@ -104,11 +107,28 @@ rl._refreshLine = () => {
             );
         }
 
+        bypassRlLine = false;
         process.stdout.cursorTo(promptLength + currentCursor);
     } else {
         originalRefreshLine();
     }
 };
+
+runCheckClipboardInThread();
+
+function runCheckClipboardInThread() {
+    const worker = new Worker(path.join(__dirname, "checkClipBoard.js"));
+
+    worker.on("message", (message) => {
+        currentSuggestion = message;
+
+        bypassRlLine = true;
+        rl._refreshLine();
+    });
+
+    worker.on("error", (error) => console.error("Worker error:", error));
+    worker.on("exit", (code) => console.log(`Worker exited with code ${code}`));
+}
 
 let suggestionAccepted = false;
 
