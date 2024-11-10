@@ -2,11 +2,12 @@
 
 Always Two command ahead. A Shell faster than your thoughts.
 
+![image](https://github.com/user-attachments/assets/91130dd2-63f2-4d16-8d3c-ff2c26538de6)
+
 ## Problem
 Shells are supposed to be fast, but integrating AI in them makes them slow. So, we combined the capadilities of a users clipboard and ai models to make this super fasttt.
 
 ![image](https://github.com/user-attachments/assets/83c7c5d6-eec8-4fdb-95f5-20ab8ff3ad04)
-
 
 
 ## Configure 
