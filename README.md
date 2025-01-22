@@ -1,5 +1,7 @@
 # NAASH (Not another AI shell)
 
+This was made as a hackathon project for [HackThisFall 2024](https://devfolio.co/projects/yaash-yet-another-ai-shell-192b)
+
 Always Two command ahead. A Shell faster than your thoughts.
 
 ![image](https://github.com/user-attachments/assets/91130dd2-63f2-4d16-8d3c-ff2c26538de6)
