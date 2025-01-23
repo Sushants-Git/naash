@@ -1,5 +1,7 @@
 This was made as a hackathon project for [HackThisFall 2024](https://devfolio.co/projects/yaash-yet-another-ai-shell-192b) by [Vee](https://github.com/veesesh), [Ashish Malla](https://github.com/im45145v), [Siddarth](https://github.com/siddarth2810) and [Sushant](https://github.com/Sushants-Git)
 
+Demo : [NAASH](https://www.youtube.com/watch?v=6xZ1Gxxiu1U)
+
 --
 
 # NAASH (Not another AI shell)
